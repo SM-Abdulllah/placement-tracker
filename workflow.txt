@@ -34,7 +34,29 @@ Postconditions:
 ------------------------------------------------------------
 
 Workflow 2: Recruiter Creates a Job Posting (Eligibility + Deadline)
-[workflow-2-recruiter-post-job]
+Actor(s): Recruiter (primary), System
+Goal: Recruiter posts a job with criteria and deadline.
+
+Preconditions:
+- Recruiter is logged in
+
+Main Steps:
+1) Recruiter logs in
+2) Recruiter opens Dashboard
+3) Recruiter clicks Create Job
+4) Recruiter enters job details
+5) Recruiter sets eligibility criteria
+6) Recruiter sets deadline
+7) Recruiter clicks Publish
+8) System validates inputs
+9) System saves job posting
+
+Alternate / Error Flows:
+- Missing fields → Validation error
+- Invalid deadline → Block publish
+
+Postconditions:
+- Job visible to students
 
 ------------------------------------------------------------
 Workflow 3: Interview Scheduling & Slot Booking (Conflict Detection)
