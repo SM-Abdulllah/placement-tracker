@@ -1,0 +1,16 @@
+============================================================
+Campus Placement Tracker System — Milestone 1 Workflows
+============================================================
+
+Workflow 1: Student Applies to a Job (Eligibility Validation)
+[workflow-1-student-apply]
+
+------------------------------------------------------------
+
+Workflow 2: Recruiter Creates a Job Posting (Eligibility + Deadline)
+[workflow-2-recruiter-post-job]
+
+------------------------------------------------------------
+
+Workflow 3: Interview Scheduling & Slot Booking (Conflict Detection)
+[workflow-3-interview-scheduling]
