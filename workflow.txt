@@ -11,6 +11,26 @@ Workflow 2: Recruiter Creates a Job Posting (Eligibility + Deadline)
 [workflow-2-recruiter-post-job]
 
 ------------------------------------------------------------
-
 Workflow 3: Interview Scheduling & Slot Booking (Conflict Detection)
-[workflow-3-interview-scheduling]
+Actor(s): Recruiter, Student, System
+Goal: Schedule interviews without conflicts.
+
+Preconditions:
+- Student shortlisted
+- Recruiter logged in
+
+Main Steps:
+1) Recruiter selects candidate
+2) Recruiter creates slots
+3) System publishes slots
+4) Student selects slot
+5) System checks conflicts
+6) System confirms booking
+7) System updates status
+
+Alternate / Error Flows:
+- Slot taken → Ask student to choose another
+- Conflict detected → Block booking
+
+Postconditions:
+- Interview scheduled
