@@ -3,7 +3,33 @@ Campus Placement Tracker System — Milestone 1 Workflows
 ============================================================
 
 Workflow 1: Student Applies to a Job (Eligibility Validation)
-[workflow-1-student-apply]
+Actor(s): Student (primary), System
+Goal: Student successfully applies only if eligible.
+
+Preconditions:
+- Student is logged in
+- Student profile contains academic details
+- Job exists and deadline not passed
+
+Main Steps:
+1) Student logs in
+2) Student opens Job Listings
+3) System displays available jobs
+4) Student opens job details
+5) Student clicks Apply
+6) System validates eligibility (CGPA, program, backlogs, deadline)
+7) If valid, system creates Application with status = Applied
+8) System confirms submission
+9) Student views status in My Applications
+
+Alternate / Error Flows:
+- Not eligible → System blocks application
+- Deadline passed → System blocks application
+- Duplicate application → System prevents double apply
+
+Postconditions:
+- Application stored if eligible
+- Student can track status
 
 ------------------------------------------------------------
 
