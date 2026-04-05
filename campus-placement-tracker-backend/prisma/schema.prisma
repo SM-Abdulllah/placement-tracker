@@ -1,0 +1,132 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  STUDENT
+  RECRUITER
+}
+
+enum ApplicationStatus {
+  APPLIED
+  SHORTLISTED
+  REJECTED
+  INTERVIEW_SCHEDULED
+  INTERVIEW_COMPLETED
+  OFFERED
+  HIRED
+}
+
+enum SlotStatus {
+  AVAILABLE
+  BOOKED
+  CANCELLED
+}
+
+model User {
+  id           Int               @id @default(autoincrement())
+  fullName     String
+  email        String            @unique
+  passwordHash String
+  role         UserRole
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  studentProfile   StudentProfile?
+  recruiterProfile RecruiterProfile?
+}
+
+model StudentProfile {
+  id            Int           @id @default(autoincrement())
+  userId        Int           @unique
+  rollNumber    String        @unique
+  cgpa          Float
+  program       String
+  backlogCount  Int           @default(0)
+  semester      Int?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  applications  Application[]
+}
+
+model RecruiterProfile {
+  id            Int           @id @default(autoincrement())
+  userId        Int           @unique
+  companyName   String
+  companyEmail  String?
+  companyPhone  String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jobs          Job[]
+}
+
+model Job {
+  id                Int           @id @default(autoincrement())
+  recruiterId       Int
+  title             String
+  description       String
+  location          String?
+  jobType           String?
+  salaryPackage     String?
+  minCgpa           Float
+  maxBacklogs       Int           @default(0)
+  allowedPrograms   String[]
+  applicationDeadline DateTime
+  isPublished       Boolean       @default(true)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  recruiter         RecruiterProfile @relation(fields: [recruiterId], references: [id], onDelete: Cascade)
+  applications      Application[]
+  interviewSlots    InterviewSlot[]
+}
+
+model Application {
+  id            Int                @id @default(autoincrement())
+  studentId     Int
+  jobId         Int
+  status        ApplicationStatus  @default(APPLIED)
+  appliedAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+
+  student       StudentProfile     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  job           Job                @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  booking       InterviewBooking?
+
+  @@unique([studentId, jobId])
+}
+
+model InterviewSlot {
+  id            Int          @id @default(autoincrement())
+  jobId         Int
+  date          DateTime
+  startTime     DateTime
+  endTime       DateTime
+  status        SlotStatus   @default(AVAILABLE)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  job           Job          @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  booking       InterviewBooking?
+
+  @@index([jobId, date])
+}
+
+model InterviewBooking {
+  id             Int           @id @default(autoincrement())
+  applicationId  Int           @unique
+  slotId         Int           @unique
+  bookedAt       DateTime      @default(now())
+
+  application    Application   @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  slot           InterviewSlot @relation(fields: [slotId], references: [id], onDelete: Cascade)
+}
