@@ -8,12 +8,13 @@ import {
   Trash2
 } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { api } from "../api/client.js";
 import { EmptyState, ErrorList, LoadingState } from "../components/Feedback.jsx";
 import { Field } from "../components/Form.jsx";
 import { PageHeader, StatCard } from "../components/Layout.jsx";
 import { StatusBadge } from "../components/StatusBadge.jsx";
+import { useConfirm } from "../context/ConfirmContext.jsx";
 import { useToast } from "../context/ToastContext.jsx";
 import {
   deadlineIsOpen,
@@ -119,6 +120,7 @@ export function StudentProfilePage() {
 
 export function AvailableJobsPage() {
   const { showToast } = useToast();
+  const { confirmAction } = useConfirm();
   const [state, setState] = useState({ loading: true, error: null, jobs: [] });
   const [busyJobId, setBusyJobId] = useState(null);
 
@@ -133,9 +135,14 @@ export function AvailableJobsPage() {
   useEffect(loadJobs, []);
 
   const apply = async (jobId) => {
-    if (!window.confirm("Submit this application using your saved academic profile?")) {
-      return;
-    }
+    const confirmed = await confirmAction({
+      title: "Submit application?",
+      message: "The backend will use your saved academic profile to check eligibility and submit this application.",
+      confirmText: "Apply",
+      tone: "success"
+    });
+
+    if (!confirmed) return;
 
     setBusyJobId(jobId);
     try {
@@ -168,6 +175,7 @@ export function StudentJobDetailsPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { showToast } = useToast();
+  const { confirmAction } = useConfirm();
   const [state, setState] = useState({ loading: true, error: null });
   const [submitting, setSubmitting] = useState(false);
 
@@ -190,7 +198,15 @@ export function StudentJobDetailsPage() {
   const profile = state.profile.studentProfile;
 
   const apply = async () => {
-    if (!window.confirm("Apply with your saved academic profile?")) return;
+    const confirmed = await confirmAction({
+      title: "Apply for this job?",
+      message: "Your CGPA, program, backlog count, semester, and roll number are read-only and will be checked by the backend.",
+      confirmText: "Apply",
+      tone: "success"
+    });
+
+    if (!confirmed) return;
+
     setSubmitting(true);
     try {
       await api.applyToJob(Number(id));
@@ -265,6 +281,7 @@ export function StudentJobDetailsPage() {
 
 export function MyApplicationsPage() {
   const { showToast } = useToast();
+  const { confirmAction } = useConfirm();
   const [state, setState] = useState({ loading: true, error: null, applications: [] });
 
   const loadApplications = () => {
@@ -282,9 +299,15 @@ export function MyApplicationsPage() {
   useEffect(loadApplications, []);
 
   const withdraw = async (application) => {
-    if (!window.confirm(`Withdraw application for ${application.job.title}?`)) {
-      return;
-    }
+    const confirmed = await confirmAction({
+      title: "Withdraw application?",
+      message: `This will remove your application for ${application.job.title}.`,
+      detail: "Only APPLIED or REJECTED applications can be withdrawn.",
+      confirmText: "Withdraw",
+      tone: "danger"
+    });
+
+    if (!confirmed) return;
 
     try {
       await api.deleteApplication(application.id);
@@ -312,6 +335,7 @@ export function StudentSlotBookingPage() {
   const { applicationId } = useParams();
   const navigate = useNavigate();
   const { showToast } = useToast();
+  const { confirmAction } = useConfirm();
   const [state, setState] = useState({ loading: true, error: null });
   const [bookingSlotId, setBookingSlotId] = useState(null);
 
@@ -345,7 +369,15 @@ export function StudentSlotBookingPage() {
   if (state.error) return <ErrorList error={state.error} />;
 
   const book = async (slot) => {
-    if (!window.confirm(`Book ${formatDateTime(slot.startTime)}?`)) return;
+    const confirmed = await confirmAction({
+      title: "Book interview slot?",
+      message: `Book this interview slot for ${formatDateTime(slot.startTime)}?`,
+      detail: "The backend will block overlaps and unavailable slots.",
+      confirmText: "Book Slot",
+      tone: "success"
+    });
+
+    if (!confirmed) return;
 
     setBookingSlotId(slot.id);
     try {

@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
+import { useConfirm } from "../context/ConfirmContext.jsx";
 
 const studentLinks = [
   { to: "/student/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -25,10 +26,20 @@ const recruiterLinks = [
 
 export function AppLayout() {
   const { user, logout } = useAuth();
+  const { confirmAction } = useConfirm();
   const navigate = useNavigate();
   const links = user?.role === "RECRUITER" ? recruiterLinks : studentLinks;
 
   const handleLogout = async () => {
+    const confirmed = await confirmAction({
+      title: "Log out?",
+      message: "You will be signed out and returned to the login page.",
+      confirmText: "Logout",
+      tone: "logout"
+    });
+
+    if (!confirmed) return;
+
     await logout();
     navigate("/login", { replace: true });
   };

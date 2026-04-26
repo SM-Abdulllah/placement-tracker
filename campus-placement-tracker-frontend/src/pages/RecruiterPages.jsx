@@ -11,7 +11,7 @@ import {
   UsersRound
 } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { api } from "../api/client.js";
 import { EmptyState, ErrorList, LoadingState } from "../components/Feedback.jsx";
 import {
@@ -22,6 +22,7 @@ import {
 } from "../components/Form.jsx";
 import { PageHeader, StatCard } from "../components/Layout.jsx";
 import { StatusBadge } from "../components/StatusBadge.jsx";
+import { useConfirm } from "../context/ConfirmContext.jsx";
 import { useToast } from "../context/ToastContext.jsx";
 import {
   applicationStatuses,
@@ -116,6 +117,7 @@ export function RecruiterDashboard() {
 
 export function RecruiterJobsPage() {
   const { showToast } = useToast();
+  const { confirmAction } = useConfirm();
   const [state, setState] = useState({ loading: true, error: null, jobs: [] });
 
   const loadJobs = () => {
@@ -129,9 +131,15 @@ export function RecruiterJobsPage() {
   useEffect(loadJobs, []);
 
   const deleteJob = async (job) => {
-    if (!window.confirm(`Delete ${job.title}? Related applications and slots will also be removed.`)) {
-      return;
-    }
+    const confirmed = await confirmAction({
+      title: "Delete job?",
+      message: `Delete ${job.title}?`,
+      detail: "Related applications, interview slots, and bookings will also be removed.",
+      confirmText: "Delete Job",
+      tone: "danger"
+    });
+
+    if (!confirmed) return;
 
     try {
       await api.deleteJob(job.id);
@@ -358,6 +366,7 @@ export function RecruiterJobDetailsPage() {
 export function ApplicationsForJobPage() {
   const { id } = useParams();
   const { showToast } = useToast();
+  const { confirmAction } = useConfirm();
   const [state, setState] = useState({ loading: true, error: null });
 
   const load = () => {
@@ -370,6 +379,16 @@ export function ApplicationsForJobPage() {
   useEffect(load, [id]);
 
   const quickUpdate = async (application, status) => {
+    const confirmed = await confirmAction({
+      title: `${status === "REJECTED" ? "Reject" : "Shortlist"} applicant?`,
+      message: `${application.student.user.fullName} will be moved to ${status}.`,
+      detail: `Job: ${application.job.title}`,
+      confirmText: status === "REJECTED" ? "Reject" : "Shortlist",
+      tone: status === "REJECTED" ? "danger" : "success"
+    });
+
+    if (!confirmed) return;
+
     try {
       await api.updateApplicationStatus(application.id, status);
       showToast(`Application moved to ${status}.`);
@@ -403,6 +422,7 @@ export function ApplicationStatusPage() {
   const { applicationId } = useParams();
   const navigate = useNavigate();
   const { showToast } = useToast();
+  const { confirmAction } = useConfirm();
   const [state, setState] = useState({ loading: true, error: null });
   const [status, setStatus] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -429,6 +449,17 @@ export function ApplicationStatusPage() {
 
   const onSubmit = async (event) => {
     event.preventDefault();
+
+    const confirmed = await confirmAction({
+      title: "Update application status?",
+      message: `${application.student.user.fullName} will be moved from ${application.status} to ${status}.`,
+      detail: "Some workflow transitions are final or require an interview booking.",
+      confirmText: "Update Status",
+      tone: status === "REJECTED" ? "danger" : "warning"
+    });
+
+    if (!confirmed) return;
+
     setSubmitting(true);
     try {
       await api.updateApplicationStatus(applicationId, status);
@@ -481,6 +512,7 @@ export function ApplicationStatusPage() {
 export function InterviewSlotsPage() {
   const { id } = useParams();
   const { showToast } = useToast();
+  const { confirmAction } = useConfirm();
   const [state, setState] = useState({ loading: true, error: null });
   const [slotForm, setSlotForm] = useState(emptySlotForm);
   const [slotEdits, setSlotEdits] = useState({});
@@ -553,9 +585,15 @@ export function InterviewSlotsPage() {
   };
 
   const deleteSlot = async (slot) => {
-    if (!window.confirm(`Delete slot on ${formatDateTime(slot.startTime)}?`)) {
-      return;
-    }
+    const confirmed = await confirmAction({
+      title: "Delete interview slot?",
+      message: `Delete the slot on ${formatDateTime(slot.startTime)}?`,
+      detail: "Booked slots cannot be deleted.",
+      confirmText: "Delete Slot",
+      tone: "danger"
+    });
+
+    if (!confirmed) return;
 
     try {
       await api.deleteSlot(slot.id);
