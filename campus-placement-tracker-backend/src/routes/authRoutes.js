@@ -3,7 +3,8 @@ import {
   registerStudentHandler,
   registerRecruiterHandler,
   loginHandler,
-  meHandler
+  meHandler,
+  logoutHandler
 } from "../controllers/authController.js";
 import {
   registerStudentValidator,
@@ -37,5 +38,6 @@ router.post(
 );
 
 router.get("/me", protect, meHandler);
+router.post("/logout", protect, logoutHandler);
 
 export default router;

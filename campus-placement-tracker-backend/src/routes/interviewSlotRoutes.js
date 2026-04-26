@@ -20,11 +20,10 @@ import {
 
 const router = express.Router();
 
-/**
- * Public / authenticated read
- */
 router.get(
   "/job/:jobId",
+  protect,
+  authorizeRoles(USER_ROLES.STUDENT, USER_ROLES.RECRUITER),
   jobIdParamValidatorForSlots,
   validate,
   getSlotsByJobHandler

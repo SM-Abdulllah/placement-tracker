@@ -50,3 +50,12 @@ export const meHandler = catchAsync(async (req, res) => {
     user
   );
 });
+
+export const logoutHandler = catchAsync(async (req, res) => {
+  return successResponse(
+    res,
+    200,
+    "Logout successful. Please remove the token on the client.",
+    null
+  );
+});

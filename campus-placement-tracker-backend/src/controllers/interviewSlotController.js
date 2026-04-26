@@ -21,7 +21,7 @@ export const createSlotHandler = catchAsync(async (req, res) => {
 
 export const getSlotsByJobHandler = catchAsync(async (req, res) => {
   const onlyAvailable = req.query.available === "true";
-  const slots = await getSlotsByJob(req.params.jobId, onlyAvailable);
+  const slots = await getSlotsByJob(req.user, req.params.jobId, onlyAvailable);
 
   return successResponse(
     res,

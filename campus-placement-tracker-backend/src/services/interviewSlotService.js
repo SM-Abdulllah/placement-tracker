@@ -2,7 +2,8 @@ import prisma from "../db/prisma.js";
 import ApiError from "../utils/ApiError.js";
 import {
   APPLICATION_STATUS,
-  SLOT_STATUS
+  SLOT_STATUS,
+  USER_ROLES
 } from "../utils/statusConstants.js";
 
 const slotInclude = {
@@ -83,8 +84,8 @@ const ensureValidTimeRange = (date, startTime, endTime) => {
     throw new ApiError(400, "End time must be after start time.");
   }
 
-  if (parsedEnd <= new Date()) {
-    throw new ApiError(400, "Interview slot must be scheduled in the future.");
+  if (parsedStart <= new Date()) {
+    throw new ApiError(400, "Interview slot must start in the future.");
   }
 
   return {
@@ -151,10 +152,35 @@ export const createSlot = async (userId, payload) => {
   return slot;
 };
 
-export const getSlotsByJob = async (jobId, onlyAvailable = false) => {
+export const getSlotsByJob = async (user, jobId, onlyAvailable = false) => {
   const where = {
     jobId: Number(jobId)
   };
+
+  if (user.role === USER_ROLES.RECRUITER) {
+    const recruiter = await getRecruiterProfileByUserId(user.id);
+    await ensureRecruiterOwnsJob(recruiter.id, jobId);
+  }
+
+  if (user.role === USER_ROLES.STUDENT) {
+    const student = await getStudentProfileByUserId(user.id);
+    const shortlistedApplication = await prisma.application.findFirst({
+      where: {
+        studentId: student.id,
+        jobId: Number(jobId),
+        status: APPLICATION_STATUS.SHORTLISTED
+      }
+    });
+
+    if (!shortlistedApplication) {
+      throw new ApiError(
+        403,
+        "Interview slots are available only for shortlisted applications."
+      );
+    }
+
+    onlyAvailable = true;
+  }
 
   if (onlyAvailable) {
     where.status = SLOT_STATUS.AVAILABLE;
@@ -207,6 +233,10 @@ export const updateSlot = async (userId, slotId, payload) => {
   if (payload.status !== undefined) {
     if (existingSlot.booking && payload.status !== SLOT_STATUS.BOOKED) {
       throw new ApiError(400, "Booked slot status cannot be changed manually.");
+    }
+
+    if (!existingSlot.booking && payload.status === SLOT_STATUS.BOOKED) {
+      throw new ApiError(400, "A slot can be marked BOOKED only through a student booking.");
     }
 
     updateData.status = payload.status;
@@ -290,10 +320,7 @@ export const bookSlot = async (userId, slotId, applicationId) => {
       );
     }
 
-    if (
-      application.status !== APPLICATION_STATUS.SHORTLISTED &&
-      application.status !== APPLICATION_STATUS.INTERVIEW_SCHEDULED
-    ) {
+    if (application.status !== APPLICATION_STATUS.SHORTLISTED) {
       throw new ApiError(
         400,
         "Only shortlisted applications can book interview slots."
@@ -335,19 +362,27 @@ export const bookSlot = async (userId, slotId, applicationId) => {
       );
     }
 
+    const reservedSlot = await tx.interviewSlot.updateMany({
+      where: {
+        id: slot.id,
+        status: SLOT_STATUS.AVAILABLE,
+        startTime: {
+          gt: new Date()
+        }
+      },
+      data: {
+        status: SLOT_STATUS.BOOKED
+      }
+    });
+
+    if (reservedSlot.count !== 1) {
+      throw new ApiError(409, "This slot has just been booked by another student.");
+    }
+
     const booking = await tx.interviewBooking.create({
       data: {
         applicationId: application.id,
         slotId: slot.id
-      }
-    });
-
-    await tx.interviewSlot.update({
-      where: {
-        id: slot.id
-      },
-      data: {
-        status: SLOT_STATUS.BOOKED
       }
     });
 

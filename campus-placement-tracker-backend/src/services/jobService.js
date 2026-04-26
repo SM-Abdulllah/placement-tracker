@@ -141,17 +141,6 @@ export const deleteRecruiterJob = async (userId, jobId) => {
   const recruiter = await getRecruiterProfileByUserId(userId);
   await getOwnedJobOrThrow(jobId, recruiter.id);
 
-  const applicationCount = await prisma.application.count({
-    where: { jobId: Number(jobId) }
-  });
-
-  if (applicationCount > 0) {
-    throw new ApiError(
-      400,
-      "Cannot delete a job that already has applications. You may unpublish it instead."
-    );
-  }
-
   await prisma.job.delete({
     where: { id: Number(jobId) }
   });
