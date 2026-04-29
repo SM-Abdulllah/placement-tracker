@@ -407,12 +407,20 @@ export function ApplicationsForJobPage() {
         eyebrow="Applications"
         title={state.job.title}
         actions={
-          <Link className="button ghost" to={`/recruiter/jobs/${id}`}>
-            <ArrowLeft size={17} />
-            Back
-          </Link>
+          <>
+            <Link className="button ghost" to={`/recruiter/jobs/${id}`}>
+              <ArrowLeft size={17} />
+              Back
+            </Link>
+            <Link className="button primary" to={`/recruiter/jobs/${id}/slots`}>
+              <CalendarClock size={17} />
+              Manage Slots
+            </Link>
+          </>
         }
-      />
+      >
+        Shortlist applicants here, then create interview slots for the same job.
+      </PageHeader>
       <RecruiterApplicationList applications={state.applications} onQuickUpdate={quickUpdate} />
     </section>
   );
@@ -772,6 +780,12 @@ function RecruiterApplicationList({ applications, onQuickUpdate }) {
                   Reject
                 </button>
               </>
+            ) : null}
+            {["SHORTLISTED", "INTERVIEW_SCHEDULED"].includes(application.status) ? (
+              <Link className="button secondary" to={`/recruiter/jobs/${application.jobId}/slots`}>
+                <CalendarClock size={17} />
+                Slots
+              </Link>
             ) : null}
             <Link className="button ghost" to={`/recruiter/applications/${application.id}/status`}>
               <ClipboardList size={17} />
